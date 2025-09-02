@@ -1,0 +1,764 @@
+schema {
+  query: MenusQuery
+  mutation: MenusMutation
+}
+
+type Address {
+  street: String!
+  city: String!
+  state: String!
+  zip: String!
+  country: String!
+  countryCode: String!
+}
+
+"""Represents a print list for line card printing."""
+type AssemblyPrintList implements Node & PrintList {
+  """The globally unique identifier of the node."""
+  id: ID!
+
+  """Primary key of the print list."""
+  printListId: Guid
+  title: String!
+  subtitle: String
+  creationTime: DateTimeOffset!
+  modifiedTime: DateTimeOffset!
+  sections: [PrintAssemblySection]
+}
+
+"""Input type for mutating an assembly print list."""
+input AssemblyPrintListUpdate {
+  id: ID!
+
+  """New title, or null to keep the existing title."""
+  title: String
+
+  """New subtitle, or null to keep the existing subtitle"""
+  subtitle: String
+
+  """New assembly sections, or null to keep the existing sections."""
+  sections: [PrintListSectionInput]
+}
+
+"""Root for querying data directly from CBORD"""
+type Cbord {
+  """Search for an item in CBORD by name"""
+  items(search: String, skip: Int = 0, take: Int = 10): [CbordItem]
+
+  """Gets a single service unit by its CBORD primray key."""
+  serviceUnit(cbordId: Int): ServiceUnit
+  serviceUnits: [ServiceUnit]
+}
+
+"""All of the available information on the item from CBORD."""
+type CbordItem implements Node {
+  """The globally unique identifier of the node."""
+  id: ID!
+
+  """Primary key for this item in the CBORD database"""
+  cbordItemId: Int!
+
+  """The name of the item in CBORD."""
+  name: String
+
+  """The common name of the item in CBORD."""
+  commonName: String
+
+  """
+  The formal name of the item in CBORD.  This is the version intended for public display.
+  """
+  formalName: String
+
+  """A unique string identifying this item"""
+  keyName: String
+
+  """The date/time this item was first created in CBORD."""
+  dateCreated: DateTime
+
+  """The date/time the item was last modified in CBORD."""
+  dateModified: DateTime
+
+  """A list of nutrition facts available for this item."""
+  nutritionFacts: [CbordNutritionFact]
+
+  """A list of traits associated with this item."""
+  traits: [Trait]
+
+  """The ingredients this item is made up of"""
+  ingredients: String
+
+  """A list of component items within this item."""
+  components: [CbordItem]
+
+  """
+  A list of CBORD item ids that are components of this item.  More efficient
+  than the `components` field if all you need is the IDs.
+  """
+  componentIds: [Int]
+}
+
+type CbordItemAppearance {
+  """The date this item is served."""
+  date: DateTime!
+
+  """The meal this item is served."""
+  meal: String!
+
+  """
+  The primary key of the course in the CBORD database (often a Dining Court station)
+  """
+  courseId: Int
+
+  """Name of the course in CBORD (often a Dining Court station)"""
+  courseName: String
+
+  """Unique string identifying this item"""
+  keyName: String!
+
+  """Name of the item"""
+  itemName: String!
+
+  """Name of this item exposed to the public"""
+  formalName: String!
+
+  """The primary key of the item in CBORD"""
+  cbordItemId: Int!
+
+  """All of the available information on the item from CBORD."""
+  detail: CbordItem
+}
+
+"""Describes a nutrition fact, such as "Total Fat" or "Calories"."""
+type CbordNutritionFact {
+  """
+  Name of the nutrition fact, e.g. "Calories"
+  """
+  name: String!
+
+  """Numeric value of the nutrition """
+  value: Decimal
+
+  """
+  Formatted version of the value to be displayed on a label, e.g. "34g".  Can be null.
+  """
+  label: String
+
+  """The daily value, e.g. "17%".  Can be null."""
+  dailyValueLabel: String
+}
+
+type ComponentAdministration {
+  itemId: Guid!
+  specialName: String
+  item: Item
+  isDisplayed: Boolean!
+  isPublished: Boolean!
+}
+
+"""Update a parstock component"""
+input ComponentInput {
+  """Item ID"""
+  itemId: Guid!
+  specialName: String
+  isDisplayed: Boolean!
+}
+
+"""Gets the items served on a particular day."""
+type DailyMenu {
+  meals: [MealMenu!]!
+  notes: String!
+}
+
+"""
+The `Date` scalar type represents a year, month and day in accordance with the
+[ISO-8601](https://en.wikipedia.org/wiki/ISO_8601) standard.
+"""
+scalar Date
+
+"""
+The `DateTime` scalar type represents a date and time. `DateTime` expects
+timestamps to be formatted in accordance with the
+[ISO-8601](https://en.wikipedia.org/wiki/ISO_8601) standard.
+"""
+scalar DateTime
+
+"""
+The `DateTimeOffset` scalar type represents a date, time and offset from UTC.
+`DateTimeOffset` expects timestamps to be formatted in accordance with the
+[ISO-8601](https://en.wikipedia.org/wiki/ISO_8601) standard.
+"""
+scalar DateTimeOffset
+
+scalar Decimal
+
+"""Metadata on a deleted node."""
+type DeletedNode {
+  """ID of the deleted node."""
+  deletedNodeId: ID
+}
+
+"""Represents a residential dining court."""
+type DiningCourt implements Node & Location {
+  """The globally unique identifier of the node."""
+  id: ID!
+  name: String!
+  category: String!
+  phone: String
+  latitude: Float
+  longitude: Float
+  address: Address
+  logoUrl: Uri
+  bannerUrl: Uri
+  url: Uri
+  transactMobileOrderId: Int
+  formalName: String
+  dailyMenu(date: Date!): DailyMenu
+  adminMenu(date: Date!): MenuConfiguration
+  publishStatus(startDate: Date!, endDate: Date!): [PublishStatus!]!
+  lineLength: String
+  isLineLengthCrowdsourcingEnabled: Boolean!
+  normalHours: [DiningCourtNormalHoursPeriod!]!
+  upcomingMeals: [UpcomingMeal!]!
+  googlePlaceId: String
+}
+
+type DiningCourtCategory {
+  name: String!
+  diningCourts: [DiningCourt!]!
+}
+
+type DiningCourtNormalHoursDay {
+  dayOfWeek: String!
+  meals: [DiningCourtNormalHoursMeal!]!
+}
+
+type DiningCourtNormalHoursMeal {
+  name: String!
+  startTime: TimeOnly!
+  endTime: TimeOnly!
+}
+
+type DiningCourtNormalHoursPeriod {
+  """The globally unique identifier of the node."""
+  id: ID!
+  name: String!
+  effectiveDate: DateTime!
+  days: [DiningCourtNormalHoursDay!]!
+}
+
+type FavoritedItem implements Node {
+  """The globally unique identifier of the node."""
+  id: ID!
+  favoriteId: Guid!
+  item: Item!
+  dateAdded: DateTimeOffset
+}
+
+scalar Guid
+
+"""A field whose value is a hex color code"""
+scalar HexColorCode
+
+"""All of the available information on the item from CBORD."""
+type Item implements Node {
+  """The globally unique identifier of the node."""
+  id: ID!
+
+  """The unique identifier of the item, in common with the V2 REST API"""
+  itemId: Guid!
+
+  """The name of the item in CBORD."""
+  name: String!
+
+  """A list of nutrition facts available for this item."""
+  nutritionFacts: [NutritionFact!]
+
+  """A list of traits associated with this item."""
+  traits: [Trait!]
+
+  """The ingredients this item is made up of"""
+  ingredients: String
+
+  """The components of this item, if any"""
+  components: [Item!]
+  appearances: [ItemOccurrence!]!
+  isCbordItem: Boolean!
+  isBlacklisted: Boolean!
+  isDiscontinued: Boolean!
+  isNutritionReady: Boolean!
+  isFlaggedForCurrentUser: Boolean!
+  isHiddenForCurrentUser: Boolean!
+}
+
+"""
+Provides information for administering an occurrence of an item on a menu
+"""
+type ItemAdministration {
+  itemMenuId: Guid!
+  specialName: String
+  item: Item
+  isDisplayed: Boolean!
+  isPublished: Boolean!
+  components: [ComponentAdministration!]
+}
+
+"""Represents an occurrence of a served item."""
+type ItemAppearance implements Node {
+  """The globally unique identifier of the node."""
+  id: ID!
+
+  """Unique identifier for this occurrence of an item on a menu."""
+  itemMenuId: Guid!
+  item: Item!
+  displayName: String!
+  specialName: String
+
+  """
+  True if this item has sub-components.  Useful if you don't want to fetch component info yet.
+  """
+  hasComponents: Boolean!
+
+  """
+  These are the menued parstock components for one particular date/meal/station.
+  """
+  components: [ItemAppearance!]
+}
+
+"""Update a menued item"""
+input ItemInput {
+  """Item Menu ID"""
+  itemMenuId: Guid
+
+  """Item ID"""
+  itemId: Guid!
+  specialName: String
+  isDisplayed: Boolean!
+
+  """
+  Parstock item configuration.  If set to null, default parstock behavior will apply.
+  """
+  components: [ComponentInput]
+}
+
+type ItemOccurrence {
+  locationName: String!
+  date: DateTimeOffset!
+  mealName: String!
+  stationName: String!
+}
+
+"""Represents a print list for line card printing."""
+type LineCardPrintList implements Node & PrintList {
+  """The globally unique identifier of the node."""
+  id: ID!
+
+  """Primary key of the print list."""
+  printListId: Guid
+  title: String!
+  creationTime: DateTimeOffset!
+  modifiedTime: DateTimeOffset!
+  items: [PrintItem]
+}
+
+"""Input type for mutating an line card print list."""
+input LineCardPrintListUpdate {
+  id: ID
+  title: String
+  items: [PrintItemInput]
+}
+
+interface Location {
+  """The globally unique identifier of the node."""
+  id: ID!
+  name: String!
+  category: String!
+  phone: String
+  latitude: Float
+  longitude: Float
+  address: Address
+  logoUrl: Uri
+  bannerUrl: Uri
+  url: Uri
+  transactMobileOrderId: Int
+}
+
+type LocationCategory {
+  name: String!
+  locations: [Location!]!
+}
+
+"""Provides information for meal administration"""
+type MealConfiguration {
+  id: Guid!
+  name: String!
+  state: MealState!
+  startTime: TimeOnly
+  endTime: TimeOnly
+  normalStartTime: TimeOnly
+  normalEndTime: TimeOnly
+  notes: String
+  stations: [StationConfiguration!]!
+}
+
+"""Update a daily meal"""
+input MealInput {
+  """Meal Menu ID"""
+  id: Guid!
+  name: String!
+  state: MealState!
+  startTime: TimeOnly
+  endTime: TimeOnly
+  stations: [StationInput]
+}
+
+"""Represents a meal, e.g. "Lunch"."""
+type MealMenu implements Node {
+  """The globally unique identifier of the node."""
+  id: ID!
+  meal: String! @deprecated(reason: "Use name instead")
+  name: String!
+  status: MealStatus!
+  type: MealType!
+  startTime: DateTimeOffset
+  endTime: DateTimeOffset
+  notes: String
+  stations: [Station!]!
+}
+
+"""Meal state configurable by menu admins (closed/open/hidden)"""
+enum MealState {
+  """Open for dining"""
+  OPEN
+
+  """Closed, no meal will be served, but meal is visible on menu"""
+  CLOSED
+
+  """Not visible on public menu"""
+  HIDDEN
+}
+
+"""Open/closed state of a meal."""
+enum MealStatus {
+  """The meal is open."""
+  OPEN
+
+  """No meal will be served."""
+  CLOSED
+
+  """The menu is yet to be determined."""
+  UNAVAILABLE
+}
+
+"""Provides a hint to the type of meal being served."""
+enum MealType {
+  """Breakfast"""
+  BREAKFAST
+
+  """Lunch"""
+  LUNCH
+
+  """Dinner"""
+  DINNER
+
+  """Snack"""
+  SNACK
+
+  """Unknown"""
+  UNKNOWN
+}
+
+"""Provides information for menu administration"""
+type MenuConfiguration {
+  id: Guid!
+  notes: String
+  meals: [MealConfiguration!]!
+}
+
+"""Update a daily menu"""
+input MenuInput {
+  locationId: String!
+  date: Date!
+  meals: [MealInput]
+}
+
+"""Root for modifying data"""
+type MenusMutation {
+  updateMenu(menu: MenuInput!): MenuConfiguration
+
+  """Creates a new non-CBORD item with a particular name."""
+  createNonCbordItem(name: String!): Item
+  setPublishStatus(locationId: String!, date: Date!, isPublished: Boolean!, meals: [String]): MenuConfiguration
+  setBlacklisted(itemId: Guid!, isBlacklisted: Boolean!): Item!
+  addFavoriteById(id: ID!): [FavoritedItem!]!
+  addFavoriteByItemId(itemId: Guid!): [FavoritedItem!]!
+  removeFavorite(id: ID!): [FavoritedItem!]!
+  removeFavoriteByFavoriteId(favoriteId: Guid!): [FavoritedItem!]!
+  editFavoritesWithItemIds(itemIds: [Guid!]!): [FavoritedItem!]!
+  editFavorites(ids: [ID!]!): [FavoritedItem!]!
+  createPrintList(title: String!, type: PrintListType!): PrintList
+  modifyPrintItem(input: PrintItemInput!): PrintItem
+  modifyLineCardPrintList(input: LineCardPrintListUpdate!): LineCardPrintList
+  modifyAssemblyPrintList(input: AssemblyPrintListUpdate!): AssemblyPrintList
+  modifyAssemblyPrintSection(input: PrintListSectionInput!): PrintAssemblySection
+  deletePrintList(id: ID!): DeletedNode
+}
+
+"""Root for querying data"""
+type MenusQuery {
+  node(
+    """The global id of the object."""
+    id: ID!
+  ): Node
+  currentUser: User
+  locations: [Location]
+  locationCategories: [LocationCategory!]!
+  diningCourts: [DiningCourt]
+  diningCourt(id: ID): DiningCourt
+
+  """
+  Get the dining court by the Location primary key, e.g. "ERHT"
+  """
+  diningCourtByLocationId(locationId: String): DiningCourt
+  diningCourtByName(name: String!): DiningCourt
+  diningCourtCategories: [DiningCourtCategory!]!
+  itemAppearance(itemMenuId: Guid!): ItemAppearance!
+  itemByItemId(itemId: Guid!): Item!
+  itemSearch(name: String!): [Item!]!
+  dietaryTraits: [Trait!]!
+  retailLocations: [RetailLocation]
+  retailLocation(id: ID): RetailLocation
+  printLists: [PrintList]
+
+  """Root for querying data directly from CBORD"""
+  cbord: Cbord
+}
+
+interface Node {
+  id: ID!
+}
+
+"""Describes a nutrition fact, such as "Total Fat" or "Calories"."""
+type NutritionFact {
+  """
+  Name of the nutrition fact, e.g. "Calories"
+  """
+  name: String!
+
+  """Numeric value of the nutrition fact"""
+  value: Float
+
+  """
+  Formatted version of the value to be displayed on a label, e.g. "34g".  Can be null.
+  """
+  label: String
+
+  """The daily value, e.g. "17%".  Can be null."""
+  dailyValueLabel: String
+}
+
+"""Represents a section on an assembly print list."""
+type PrintAssemblySection implements Node {
+  """The globally unique identifier of the node."""
+  id: ID!
+  name: String!
+  items: [PrintItem]
+}
+
+"""Represents an item to be printed on a line card."""
+type PrintItem implements Node {
+  """The globally unique identifier of the node."""
+  id: ID!
+
+  """
+  Unique identifier of the CBORD item, or null if this is not a CBORD item.
+  """
+  cbordItemId: Int
+
+  """A custom string to override the item name when printing."""
+  specialName: String
+
+  """The number of line cards to print"""
+  quantity: Int!
+  cbordItem: CbordItem
+}
+
+"""The number of line cards to print."""
+input PrintItemInput {
+  """
+  ID of the print item, or null to create a new one within the context of a session.
+  """
+  id: ID
+
+  """
+  Unique identifier of the CBORD item, or null if this is not a CBORD item.
+  """
+  cbordItemId: Int
+
+  """A custom string to override the item name when printing."""
+  specialName: String
+
+  """The number of line cards to print."""
+  quantity: Int
+}
+
+"""Represents a print list for line card printing."""
+interface PrintList {
+  id: ID!
+
+  """Primary key of the print list."""
+  printListId: Guid
+  title: String!
+  creationTime: DateTimeOffset!
+  modifiedTime: DateTimeOffset!
+}
+
+"""Represents a section on an assembly print list."""
+input PrintListSectionInput {
+  """ID of the section to update, or null to create a new section"""
+  id: ID
+
+  """New name for this section, or null to keep the same name."""
+  name: String
+
+  """New items for this section, or null to keep them the same."""
+  items: [PrintItemInput]
+}
+
+"""Style of print list."""
+enum PrintListType {
+  LINE_ITEM_CARD
+  ASSEMBLY_CARD
+
+  """A line card"""
+  LINE_CARD
+
+  """A list for a collection of items"""
+  ASSEMBLY
+}
+
+type PublishStatus {
+  date: Date!
+  isOpen: Boolean!
+  isPublished: Boolean!
+  isAbnormal: Boolean!
+  needsAttention: Boolean!
+}
+
+type RetailLocation implements Node & Location {
+  """The globally unique identifier of the node."""
+  id: ID!
+  name: String!
+  category: String!
+  phone: String
+  latitude: Float
+  longitude: Float
+  address: Address
+  logoUrl: Uri
+  bannerUrl: Uri
+  url: Uri
+  transactMobileOrderId: Int
+  menuUrl: Uri
+}
+
+"""Represents a dining operation where food is served."""
+type ServiceUnit implements Node {
+  """The globally unique identifier of the node."""
+  id: ID!
+
+  """The primary key of this service unit in CBORD."""
+  cbordId: Int!
+
+  """
+  The name of the CBORD service unit, e.g. "Earhart Dining Court"
+  """
+  name: String!
+
+  """Gets the items served on a particular day."""
+  menu(date: Date): [CbordItemAppearance]
+}
+
+"""Represents a station at a dining court."""
+type Station implements Node {
+  """The globally unique identifier of the node."""
+  id: ID!
+  name: String!
+  items: [ItemAppearance!]!
+  notes: String
+  iconUrl: Uri
+  foregroundColor: HexColorCode
+  backgroundColor: HexColorCode
+}
+
+"""Provides information for station administration"""
+type StationConfiguration {
+  id: Guid!
+  stationId: Guid!
+  normalName: String!
+  specialName: String
+  notes: String
+  items: [ItemAdministration!]!
+}
+
+"""Update a menued meal station"""
+input StationInput {
+  """Station Menu ID"""
+  id: Guid!
+
+  """Station ID"""
+  stationId: Guid!
+  specialName: String
+  items: [ItemInput]
+}
+
+"""
+The `Time` scalar type represents a time in accordance with the
+[ISO-8601](https://en.wikipedia.org/wiki/ISO_8601) standard. Format is
+`HH:mm:ss.FFFFFFF`.
+"""
+scalar TimeOnly
+
+"""
+Describes a trait associated with a CBORD item, such as "Gluten" or "Vegetarian"
+"""
+type Trait implements Node {
+  """The globally unique identifier of the node."""
+  id: ID!
+
+  """Name of the trait."""
+  name: String!
+  type: String!
+
+  """A URL to a PNG icon indicating the trait"""
+  pngIcon: Uri
+
+  """A URL to a SVG icon indicating the trait"""
+  svgIcon: Uri
+
+  """A URL to an SVG icon without a background indicating the trait"""
+  svgIconWithoutBackground: Uri
+}
+
+type UpcomingMeal {
+  """The globally unique identifier of the node."""
+  id: ID!
+  name: String!
+  type: String!
+  startTime: DateTimeOffset!
+  endTime: DateTimeOffset!
+}
+
+scalar Uri
+
+type User implements Node {
+  """The globally unique identifier of the node."""
+  id: ID!
+  userId: String!
+  commonName: String!
+  firstName: String!
+  lastName: String!
+  email: String!
+  puid: String!
+  favorites: [FavoritedItem!]!
+  printLists: [PrintList]
+}
+
