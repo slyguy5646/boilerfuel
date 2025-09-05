@@ -73,14 +73,6 @@ function Content() {
         {!isLoading && (
           <View style={{ width: "100%", height: "100%", rowGap: 20 }}>
             {data?.diningCourts.map((d) => {
-              const images = {
-                ford: require("./assets/courts/ford.png"),
-                earhart: require("./assets/courts/earhart.png"),
-                hillenbrand: require("./assets/courts/hillenbrand.png"),
-                windsor: require("./assets/courts/windsor.png"),
-                wiley: require("./assets/courts/wiley.png"),
-              };
-
               const image =
                 d.name === "Ford"
                   ? require("./assets/courts/ford.png")
@@ -130,7 +122,6 @@ function Content() {
                         {d.name}
                       </RoundedText>
                     </View>
-                    {/* <RoundedText>{}</RoundedText> */}
                     <RoundedText>{d.lineLength}</RoundedText>
                   </View>
                   <TouchableOpacity
